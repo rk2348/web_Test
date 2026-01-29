@@ -3,8 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Debug WebAR</title>
+    <title>iPhone WebAR - My Model</title>
+
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@master/aframe/build/aframe-ar.js"></script>
   </head>
 
@@ -15,23 +17,25 @@
       arjs="sourceType: webcam; debugUIEnabled: false; videoTexture: true;">
       
       <a-assets>
-        <a-asset-item id="live-model" src="LIVE.glb"></a-asset-item>
+        <a-asset-item id="my-model" src="my_model.glb"></a-asset-item>
       </a-assets>
 
       <a-marker preset="hiro">
+        
         <a-sphere radius="0.1" color="yellow" position="0 0 0"></a-sphere>
         
         <a-entity 
-          gltf-model="#live-model" 
-          scale="0.01 0.01 0.01" 
-          position="0 0.2 0">
+          gltf-model="#my-model" 
+          scale="0.5 0.5 0.5" 
+          position="0 0.5 0"
+          rotation="0 0 0"
+          animation="property: rotation; to: 0 360 0; loop: true; dur: 10000">
         </a-entity>
 
-        <a-entity light="type: ambient; intensity: 1.5;"></a-entity>
-        <a-entity light="type: directional; position: 1 1 1; intensity: 1;"></a-entity>
       </a-marker>
 
       <a-entity camera></a-entity>
+      
     </a-scene>
   </body>
 </html>
