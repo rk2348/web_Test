@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>WebAR - Sticky Object</title>
+    <title>WebAR - Sticky Object Improved</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script>
@@ -13,28 +13,26 @@
           const object = this.el;
 
           marker.addEventListener('markerFound', () => {
-            if (!this.markerFound) {
-              // 初回検知時のみ実行
-              // マーカーの現在の世界座標（World Position）を取得
-              const worldPos = new THREE.Vector3();
-              const worldQuat = new THREE.Quaternion();
-              const worldScale = new THREE.Vector3();
-              
-              object.object3D.getWorldPosition(worldPos);
-              object.object3D.getWorldQuaternion(worldQuat);
-              object.object3D.getWorldScale(worldScale);
+            if (this.markerFound) return;
 
-              // オブジェクトをマーカーから切り離し、シーン（a-scene）直下へ移動
-              this.el.sceneEl.appendChild(object);
+            // 100ミリ秒だけ待ってから位置を固定（追跡が安定するのを待つ）
+            setTimeout(() => {
+              // 現在の世界座標・回転・スケールを強制的に更新して取得
+              const worldMatrix = new THREE.Matrix4();
+              object.object3D.updateMatrixWorld(true); 
+              worldMatrix.copy(object.object3D.matrixWorld);
 
-              // 取得した世界座標を再設定
-              object.object3D.position.copy(worldPos);
-              object.object3D.quaternion.copy(worldQuat);
-              object.object3D.scale.copy(worldScale);
+              // オブジェクトをマーカーから切り離し、シーン直下へ移動
+              const sceneEl = document.querySelector('a-scene');
+              sceneEl.appendChild(object);
 
-              this.markerFound = true; // 固定完了
-              console.log("Object Fixed in World Space");
-            }
+              // 取得した行列を新しい親（シーン）に対して適用
+              object.object3D.matrix.copy(worldMatrix);
+              object.object3D.matrix.decompose(object.object3D.position, object.object3D.quaternion, object.object3D.scale);
+
+              this.markerFound = true;
+              console.log("Object fixed!");
+            }, 100); 
           });
         }
       });
@@ -42,10 +40,11 @@
   </head>
 
   <body style="margin: 0; overflow: hidden;">
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
       
       <a-marker preset="hiro">
-        <a-box id="myBox" position="0 0.5 0" material="color: blue; opacity: 0.8;"
+        <a-box position="0 0.5 0" 
+               material="color: blue; opacity: 0.8;"
                animation="property: rotation; to: 0 360 0; loop: true; dur: 3000"
                sticky-object>
         </a-box>
