@@ -2,37 +2,54 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>WebAR - Sticky Object Improved</title>
+    <title>WebAR - Fixed Clone</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script>
-      AFRAME.registerComponent('sticky-object', {
+      AFRAME.registerComponent('marker-fixer', {
         init: function () {
-          this.markerFound = false;
-          const marker = document.querySelector('a-marker');
-          const object = this.el;
+          this.done = false;
+          const marker = this.el; // a-marker
+          const target = document.querySelector('#sticky-box'); // 追跡する箱
 
           marker.addEventListener('markerFound', () => {
-            if (this.markerFound) return;
+            if (this.done) return;
 
-            // 100ミリ秒だけ待ってから位置を固定（追跡が安定するのを待つ）
+            // 安定するまでわずかに待機（0.1秒）
             setTimeout(() => {
-              // 現在の世界座標・回転・スケールを強制的に更新して取得
-              const worldMatrix = new THREE.Matrix4();
-              object.object3D.updateMatrixWorld(true); 
-              worldMatrix.copy(object.object3D.matrixWorld);
+              // 1. 世界座標・回転・スケールを取得
+              const worldPos = new THREE.Vector3();
+              const worldQuat = new THREE.Quaternion();
+              const worldScale = new THREE.Vector3();
+              
+              target.object3D.getWorldPosition(worldPos);
+              target.object3D.getWorldQuaternion(worldQuat);
+              target.object3D.getWorldScale(worldScale);
 
-              // オブジェクトをマーカーから切り離し、シーン直下へ移動
-              const sceneEl = document.querySelector('a-scene');
-              sceneEl.appendChild(object);
+              // 2. 新しい箱を生成（クローン）
+              const clone = document.createElement('a-box');
+              
+              // 3. 属性をコピー（見た目やアニメーション）
+              clone.setAttribute('material', target.getAttribute('material'));
+              clone.setAttribute('animation', target.getAttribute('animation'));
+              clone.setAttribute('scale', target.getAttribute('scale'));
+              
+              // 4. シーンに直接追加（マーカーの外に出す）
+              const scene = document.querySelector('a-scene');
+              scene.appendChild(clone);
 
-              // 取得した行列を新しい親（シーン）に対して適用
-              object.object3D.matrix.copy(worldMatrix);
-              object.object3D.matrix.decompose(object.object3D.position, object.object3D.quaternion, object.object3D.scale);
+              // 5. 取得した世界座標をセット
+              clone.object3D.position.copy(worldPos);
+              clone.object3D.quaternion.copy(worldQuat);
+              // スケールも維持したい場合はこちら
+              // clone.object3D.scale.copy(worldScale);
 
-              this.markerFound = true;
-              console.log("Object fixed!");
-            }, 100); 
+              // 6. 元の（マーカー内の）箱は消す
+              target.setAttribute('visible', false);
+
+              this.done = true;
+              console.log("固定オブジェクトを生成しました");
+            }, 100);
           });
         }
       });
@@ -42,11 +59,10 @@
   <body style="margin: 0; overflow: hidden;">
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
       
-      <a-marker preset="hiro">
-        <a-box position="0 0.5 0" 
+      <a-marker preset="hiro" marker-fixer>
+        <a-box id="sticky-box" position="0 0.5 0" 
                material="color: blue; opacity: 0.8;"
-               animation="property: rotation; to: 0 360 0; loop: true; dur: 3000"
-               sticky-object>
+               animation="property: rotation; to: 0 360 0; loop: true; dur: 3000">
         </a-box>
       </a-marker>
 
